@@ -1,11 +1,11 @@
-package colectivo.aplicacion; 
+package colectivo.controlador; 
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.ArrayList; 
 
-import colectivo.datos.CargarDatos;
-import colectivo.datos.CargarParametros;
+//import colectivo.datos.CargarDatos;
+//import colectivo.datos.CargarParametros;
 import colectivo.interfaz.InterfazJavaFX; 
 import colectivo.modelo.Linea;
 import colectivo.modelo.Parada;

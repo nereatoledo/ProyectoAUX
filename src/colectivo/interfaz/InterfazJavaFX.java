@@ -1,15 +1,17 @@
 package colectivo.interfaz;
 
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
-// Quitamos import de Application, Stage, Scene
-import colectivo.aplicacion.Coordinador;
+import java.util.Map;
+
+import colectivo.controlador.Coordinador;
 import colectivo.modelo.Parada;
 import colectivo.modelo.Recorrido;
-import javafx.collections.FXCollections; // Importante
+import javafx.collections.FXCollections; 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Parent; // Importamos Parent
+import javafx.scene.Parent; 
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -18,67 +20,58 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.layout.HBox; // Para el selector de hora
-import javafx.scene.layout.Priority; // Para agrandar el área de resultados
-import javafx.scene.layout.Region; 
 
-// --- YA NO ES "extends Application" ---
 public class InterfazJavaFX {
 
 	private Coordinador coordinador;
 	
 	private ComboBox<Parada> comboOrigen;
 	private ComboBox<Parada> comboDestino;
-	private ComboBox<Integer> comboDia;
-	
-	private ComboBox<String> comboHora;
-	private ComboBox<String> comboMinuto;
-	
+	private ComboBox<String> comboDia;
+	private TextField horaField;
 	private TextArea resultadoArea;
+	private Map<String, Integer> diasMap;
 	
-	private VBox rootLayout; 
+	private VBox rootLayout;
 	
 	/**
-	 * Constructor que construye la interfaz.
-	 * Reemplaza al método start().
-	 * @param coordinador La instancia del coordinador.
-	 * @param paradasDisponibles La lista de paradas cargadas por AplicacionConsultas.
+	 * Constructor that builds the interface.
+	 * Replaces the start() method.
+	 * @param coordinador coordinador instance object
+	 * @param paradasDisponibles the list of stops loaded by AplicacionConsultas.
 	 */
 	public InterfazJavaFX(Coordinador coordinador, List<Parada> paradasDisponibles) {
 		this.coordinador = coordinador;
 		
-		// --- CREAR COMPONENTES ---
 		comboOrigen = new ComboBox<>();
 		comboDestino = new ComboBox<>();
 		comboDia = new ComboBox<>();
-		
-		comboHora = new ComboBox<>();
-		comboMinuto = new ComboBox<>();
-		
+		horaField = new TextField();
 	    resultadoArea = new TextArea();
 	    resultadoArea.setEditable(false);
 	    
 	    configurarEstilosComponentes();
 	    
-	    // --- POBLAR LOS COMBOBOX ---
 	    comboOrigen.setItems(FXCollections.observableArrayList(paradasDisponibles));
 	    comboDestino.setItems(FXCollections.observableArrayList(paradasDisponibles));
 	    
+	    /*
 	    for(int i = 1; i <= 7; i++)
 	    	comboDia.getItems().add(i);
-	    comboDia.setValue(1); // Valor por defecto
+	    comboDia.setValue(1); 
+	    */
 	    
-	    for (int i = 0; i <= 23; i++) {
-	    	comboHora.getItems().add(String.format("%02d", i));
-	    }
-	    for (int i = 0; i <= 59; i++) {
-	    	comboMinuto.getItems().add(String.format("%02d", i));
-	    }
-	    comboHora.setValue("10"); // Valor por defecto
-	    comboMinuto.setValue("00"); // Valor por defecto
+	    comboDia.getItems().addAll("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo");
 	    
+	    diasMap = new HashMap<>();
+	    diasMap.put("Lunes", 1);
+	    diasMap.put("Martes", 2);
+	    diasMap.put("Miércoles", 3);
+	    diasMap.put("Jueves", 4);
+	    diasMap.put("Viernes", 5);
+	    diasMap.put("Sábado", 6);
+	    diasMap.put("Domingo", 7);
 	    
-	    // --- CONFIGURAR INTERFAZ ---
 	    Label titulo = new Label("Consulta de Recorridos");
 	    titulo.setFont(Font.font("Arial", FontWeight.BOLD, 24));
 	    titulo.setStyle("-fx-text-fill: #2c3e50;");
@@ -86,14 +79,14 @@ public class InterfazJavaFX {
 	    Label lblOrigen = crearLabel("Parada de Origen:");
 	    Label lblDestino = crearLabel("Parada de Destino:");
 	    Label lblDia = crearLabel("Día de la Semana:");
-	    Label lblHora = crearLabel("Hora de Llegada:"); 
+	    Label lblHora = crearLabel("Hora de Llegada:");
 	    Label lblResultados = crearLabel("Resultados:");
 	    
 	    Button calcularButton = new Button("🔍 Calcular Recorrido");
 	    calcularButton.setOnAction(e -> calcularRecorrido());
 	    calcularButton.setMaxWidth(Double.MAX_VALUE);
 	    
-	     calcularButton.setStyle(
+	    calcularButton.setStyle(
 	        "-fx-background-color: #3498db;" +
 	        "-fx-text-fill: white;" +
 	        "-fx-font-size: 16px;" +
@@ -127,10 +120,10 @@ public class InterfazJavaFX {
 	    );
 	    
 	    
-	    // --- CONSTRUIR EL LAYOUT ---
 	    rootLayout = new VBox(15);
 	    rootLayout.setPadding(new Insets(25));
 	    rootLayout.setStyle("-fx-background-color: linear-gradient(to bottom, #ecf0f1, #bdc3c7);");
+	    rootLayout.setAlignment(Pos.TOP_CENTER);
 	    
 	    VBox formPanel = new VBox(12);
 	    formPanel.setPadding(new Insets(20));
@@ -139,20 +132,12 @@ public class InterfazJavaFX {
 	        "-fx-background-radius: 10px;" +
 	        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"
 	    );
-	    // --- LIMITAMOS EL CRECIMIENTO DEL PANEL DE FORMULARIO ---
-	    // Hacemos que el panel de formulario use su tamaño preferido y NO crezca cuando la ventana se expanda.
-	    formPanel.setMaxHeight(Region.USE_PREF_SIZE); 
-	    
-	    Label lblDosPuntos = new Label(":");
-	    lblDosPuntos.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-	    HBox horaPanel = new HBox(8, comboHora, lblDosPuntos, comboMinuto);
-	    horaPanel.setAlignment(Pos.CENTER_LEFT);
 	    
 	    formPanel.getChildren().addAll(
 	        lblOrigen, comboOrigen,
 	        lblDestino, comboDestino,
 	        lblDia, comboDia,
-	        lblHora, horaPanel, 
+	        lblHora, horaField,
 	        calcularButton
 	    );
 	    
@@ -164,45 +149,35 @@ public class InterfazJavaFX {
 	        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"
 	    );
 	    
-	    // Aumentamos el tamaño mínimo del panel de resultados para que ocupe más espacio visual.
-	    resultadosPanel.setMinHeight(300);
-	    
-	    resultadoArea.setWrapText(true);
-	    // Aumentamos la altura preferida del área de resultados y el tamaño de fuente para mejor legibilidad.
-	    resultadoArea.setPrefHeight(420);
+	    resultadoArea.setPrefRowCount(10);
 	    resultadoArea.setStyle(
 	        "-fx-control-inner-background: #f8f9fa;" +
 	        "-fx-font-family: 'Consolas', 'Courier New';" +
-	        "-fx-font-size: 14px;" +    // fuente un poco más grande
+	        "-fx-font-size: 12px;" +
 	        "-fx-border-color: #dcdde1;" +
 	        "-fx-border-width: 1px;" +
 	        "-fx-border-radius: 5px;"
 	    );
 	    
-	    VBox.setVgrow(resultadoArea, Priority.ALWAYS); 
-	    
 	    resultadosPanel.getChildren().addAll(lblResultados, resultadoArea);
 	    
-	    titulo.setAlignment(Pos.CENTER);
-	    titulo.setMaxWidth(Double.MAX_VALUE); 
-	    
 	    rootLayout.getChildren().addAll(titulo, formPanel, resultadosPanel);
-	    
-	    // --- AJUSTE DE CRECIMIENTO VERTICAL ---
-	    // 1. Evitamos que el panel del formulario crezca (queda con su tamaño preferido).
-	    VBox.setVgrow(formPanel, Priority.NEVER);
-	    
-	    // 2. Hacemos que el panel de resultados SIEMPRE crezca y ocupe el espacio restante.
-	    VBox.setVgrow(resultadosPanel, Priority.ALWAYS);
+	 
 	}
 	
 	/**
-	 * Método para que AplicacionConsultas obtenga la UI
+	 * Method that allows AplicacionConsultas to retrieve the main UI
+	 * layout.
+	 * @return the root VBox panel containing the entire interface.
 	 */
 	public Parent getRoot() {
 		return rootLayout;
 	}
 	
+	/**
+	 * Private method that applies consistent styles to ComboBoxes and 
+	 * TextFields used in the interface.
+	 * */
 	private void configurarEstilosComponentes() {
 		String comboStyle = 
 	        "-fx-background-color: white;" +
@@ -217,35 +192,48 @@ public class InterfazJavaFX {
 	    comboDestino.setStyle(comboStyle);
 	    comboDia.setStyle(comboStyle);
 	    
-	    comboHora.setStyle(comboStyle);
-	    comboMinuto.setStyle(comboStyle);
-	    comboHora.setPrefWidth(90); 
-	    comboMinuto.setPrefWidth(90);
-	    
 	    comboOrigen.setMaxWidth(Double.MAX_VALUE);
 	    comboDestino.setMaxWidth(Double.MAX_VALUE);
 	    comboDia.setMaxWidth(Double.MAX_VALUE);
 	    
+	    horaField.setStyle(
+	        "-fx-background-color: white;" +
+	        "-fx-border-color: #bdc3c7;" +
+	        "-fx-border-width: 2px;" +
+	        "-fx-border-radius: 5px;" +
+	        "-fx-background-radius: 5px;" +
+	        "-fx-font-size: 13px;" +
+	        "-fx-padding: 8px;"
+	    );
+	    horaField.setPromptText("HH:MM (Ejemplo: 14:30)");
 	}
 	
+	/**
+	 * Private method that creates a styled Label for the interface.
+	 * Sets font, weight, and text color.
+	 * @param texto the text to display on the label.
+	 * @return a styled Label instance.
+	 * */
 	private Label crearLabel(String texto) {
-	    Label label = new Label(texto);
+		Label label = new Label(texto);
 	    label.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 14));
 	    label.setStyle("-fx-text-fill: #34495e;");
 	    return label;
 	}
 	
+	/**
+	 * Calls the method responsible for calculating routes based
+	 * on user input.
+	 * */
 	public void calcularRecorrido() {
 		try {
 			Parada origen = comboOrigen.getValue();
 			Parada destino = comboDestino.getValue();
-			Integer dia = comboDia.getValue();
+			String dia = comboDia.getValue();
+			Integer numeroDia = diasMap.get(dia);
 			
-			String horaStr = comboHora.getValue();
-			String minStr = comboMinuto.getValue();
-			
-			if(origen == null || destino == null || dia == null || horaStr == null || minStr == null) {
-				resultadoArea.setText("⚠️ Por favor complete todos los campos (incluyendo hora y minutos)."); 
+			if(origen == null || destino == null || dia == null || horaField.getText().isEmpty()) {
+				resultadoArea.setText("⚠️ Por favor complete todos los campos."); 
 				resultadoArea.setStyle(
 					"-fx-control-inner-background: #fff3cd;" +
 					"-fx-text-fill: #856404;" +
@@ -272,14 +260,14 @@ public class InterfazJavaFX {
                 return;
             }
 			
-			LocalTime hora = LocalTime.of(Integer.parseInt(horaStr), Integer.parseInt(minStr));
-
+			String partesHora[] = horaField.getText().split(":");
+			LocalTime hora = LocalTime.of(Integer.parseInt(partesHora[0]), Integer.parseInt(partesHora[1]));
 			
-			List<List<Recorrido>> recorridos = coordinador.calcularRecorrido(origen, destino, dia, hora);
+			List<List<Recorrido>> recorridos = coordinador.calcularRecorrido(origen, destino, numeroDia, hora);
 			mostrarResultados(recorridos);
 			
 		} catch (Exception e) {
-			resultadoArea.setText("❌ Error inesperado al calcular el recorrido: " + e.getMessage());
+			resultadoArea.setText("❌ Error: Verifique el formato de la hora (HH:MM)");
 			resultadoArea.setStyle(
 				"-fx-control-inner-background: #f8d7da;" +
 				"-fx-text-fill: #721c24;" +
@@ -289,11 +277,14 @@ public class InterfazJavaFX {
 				"-fx-border-width: 2px;" +
 				"-fx-border-radius: 5px;"
 			);
-			e.printStackTrace(); 
 		}
 	}
 	
-	
+	/**
+	 * Displays the calculated results in the textArea.
+	 * @param listaRecorridos the list of possible routes, each route 
+	 * represented as a list of Recorrido objects.
+	 * */
 	public void mostrarResultados(List<List<Recorrido>> listaRecorridos) {
 		if(listaRecorridos == null || listaRecorridos.isEmpty()) {
 			resultadoArea.setText("ℹ️ No hay recorridos disponibles para la búsqueda realizada.");
@@ -312,7 +303,7 @@ public class InterfazJavaFX {
 		resultadoArea.setStyle(
 			"-fx-control-inner-background: #f8f9fa;" +
 			"-fx-font-family: 'Consolas', 'Courier New';" +
-			"-fx-font-size: 14px;" +
+			"-fx-font-size: 12px;" +
 			"-fx-border-color: #28a745;" +
 			"-fx-border-width: 2px;" +
 			"-fx-border-radius: 5px;"
@@ -320,7 +311,7 @@ public class InterfazJavaFX {
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("═══════════════════════════════════════════\n");
-		sb.append("          RECORRIDOS DISPONIBLES\n"); 
+		sb.append("          RECORRIDOS DISPONIBLES\n");
 		sb.append("═══════════════════════════════════════════\n\n");
 		
 		int contador = 1;
@@ -337,7 +328,7 @@ public class InterfazJavaFX {
 					sb.append("  🚶 Tramo Caminando\n"); 
 				}
 
-				List<Parada> paradasDelRecorrido = recorrido.getParadas(); 
+				List<Parada> paradasDelRecorrido = recorrido.getParadas();
 				if (!paradasDelRecorrido.isEmpty()) {
 					sb.append("     Desde: ").append(paradasDelRecorrido.get(0).getDireccion()).append("\n");
 					sb.append("     Hasta: ").append(paradasDelRecorrido.get(paradasDelRecorrido.size() - 1).getDireccion()).append("\n");
@@ -354,4 +345,5 @@ public class InterfazJavaFX {
 		}
 		resultadoArea.setText(sb.toString());
 	}
+	
 }
