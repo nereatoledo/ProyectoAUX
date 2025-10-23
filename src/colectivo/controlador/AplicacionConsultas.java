@@ -68,7 +68,7 @@ public class AplicacionConsultas extends Application {
 		// --- 3. Cargar la Vista (FXML) ---
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/colectivo/interfaz/ControladorInterfaz.fxml"));
-			Parent root = loader.load();
+			Parent root = loader.load(); 
 
 			// Iniciar el controlador con el coordinador y paradas
 			ControladorInterfaz controller = loader.getController();
