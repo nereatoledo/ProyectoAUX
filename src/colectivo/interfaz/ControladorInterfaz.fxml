@@ -1,8 +1,2 @@
 <!-- Reemplaza el TextField de hora -->
-<Label text="Hora seleccionada:"/>
-<Label fx:id="lblHoraSeleccionada" text="--:--"/>
-
-<HBox spacing="10">
-    <Button text="⏮ Anterior" onAction="#onAnterior"/>
-    <Button text="⏭ Siguiente" onAction="#onSiguiente"/>
-</HBox>
+<!-- prueba de cambio -->
