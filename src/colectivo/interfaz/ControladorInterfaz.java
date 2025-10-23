@@ -2,55 +2,42 @@ package colectivo.interfaz;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import colectivo.controlador.Coordinador;
-import colectivo.modelo.Linea;
 import colectivo.modelo.Parada;
 import colectivo.modelo.Recorrido;
-import colectivo.modelo.Tramo;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.util.StringConverter;
 
 public class ControladorInterfaz {
 
-    // Controles de la vista
-    @FXML private ComboBox<Parada> comboOrigen;
-    @FXML private ComboBox<Parada> comboDestino;
-    @FXML private ComboBox<String> comboDia;
+    @FXML private ComboBox<Parada>  comboOrigen;
+    @FXML private ComboBox<Parada>  comboDestino;
+    @FXML private ComboBox<String>  comboDia;     
+    @FXML private ComboBox<Integer> comboHora;    
+    @FXML private ComboBox<Integer> comboMinuto;  
+    @FXML private Button            btnCalcular;
+    @FXML private TextArea          resultadoArea;
 
-    @FXML private Label lblHoraSeleccionada;
-    @FXML private Button btnAnterior;
-    @FXML private Button btnSiguiente;
-    @FXML private Button btnCalcular;
-
-    @FXML private TextArea resultadoArea;
-
-    // Estado
     private Coordinador coordinador;
+    private final Map<String,Integer> diasMap = new HashMap<>();
 
-    private Map<String, Integer> diasMap = new HashMap<>();
-    private final List<LocalTime> horariosDisponibles = new ArrayList<>();
-    private LocalTime horaSeleccionada;
-
-    // Llamar desde AplicacionConsultas luego de cargar el FXML
     public void init(Coordinador coordinador, List<Parada> paradasDisponibles) {
         this.coordinador = coordinador;
 
-        // Poblar combos
+        // Paradas
         comboOrigen.getItems().setAll(paradasDisponibles);
         comboDestino.getItems().setAll(paradasDisponibles);
 
-        // Días
+        // Día de la semana (palabras)
         comboDia.getItems().setAll("Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo");
+        comboDia.getSelectionModel().select("Lunes");
         diasMap.put("Lunes", 1);
         diasMap.put("Martes", 2);
         diasMap.put("Miércoles", 3);
@@ -59,128 +46,43 @@ public class ControladorInterfaz {
         diasMap.put("Sábado", 6);
         diasMap.put("Domingo", 7);
 
-        // Eventos
-        comboOrigen.setOnAction(e -> recalcularHorariosDisponibles());
-        comboDia.setOnAction(e -> recalcularHorariosDisponibles());
+        // Hora y minuto (dos dígitos)
+        comboHora.getItems().setAll(rango(0, 23));
+        comboMinuto.getItems().setAll(rango(0, 59));
+        comboHora.setConverter(dosDigitos());
+        comboMinuto.setConverter(dosDigitos());
 
-        // Estado inicial
-        actualizarHoraSeleccionada(null);
-        actualizarEstadoBotones();
-    }
-
-    @FXML
-    private void onAnterior() {
-        if (horariosDisponibles.isEmpty() || horaSeleccionada == null) return;
-        int i = horariosDisponibles.indexOf(horaSeleccionada);
-        i = (i - 1 + horariosDisponibles.size()) % horariosDisponibles.size();
-        horaSeleccionada = horariosDisponibles.get(i);
-        actualizarHoraSeleccionada(horaSeleccionada);
-    }
-
-    @FXML
-    private void onSiguiente() {
-        if (horariosDisponibles.isEmpty() || horaSeleccionada == null) return;
-        int i = horariosDisponibles.indexOf(horaSeleccionada);
-        i = (i + 1) % horariosDisponibles.size();
-        horaSeleccionada = horariosDisponibles.get(i);
-        actualizarHoraSeleccionada(horaSeleccionada);
+        // Selección inicial (como la imagen)
+        comboHora.getSelectionModel().select(Integer.valueOf(10));
+        comboMinuto.getSelectionModel().select(Integer.valueOf(0));
     }
 
     @FXML
     private void onCalcular() {
-        Parada origen = comboOrigen.getValue();
+        Parada origen  = comboOrigen.getValue();
         Parada destino = comboDestino.getValue();
-        String dia = comboDia.getValue();
+        String diaTxt  = comboDia.getValue();
+        Integer hh     = comboHora.getValue();
+        Integer mm     = comboMinuto.getValue();
 
-        if (origen == null || destino == null || dia == null || horaSeleccionada == null) {
-            pintarMensajeAdvertencia("⚠️ Complete origen, destino, día y seleccione un horario con los botones.");
+        if (origen == null || destino == null || diaTxt == null || hh == null || mm == null) {
+            pintarAdvertencia("⚠️ Por favor complete todos los campos.");
             return;
         }
         if (origen.equals(destino)) {
-            pintarMensajeAdvertencia("⚠️ La parada de origen y destino no pueden ser la misma.");
+            pintarAdvertencia("⚠️ La parada de origen y destino no pueden ser la misma.");
             return;
         }
 
-        Integer numeroDia = diasMap.get(dia);
+        int dia = diasMap.get(diaTxt);
+        LocalTime hora = LocalTime.of(hh, mm);
+
         try {
-            List<List<Recorrido>> recorridos = coordinador.calcularRecorrido(origen, destino, numeroDia, horaSeleccionada);
+            var recorridos = coordinador.calcularRecorrido(origen, destino, dia, hora);
             mostrarResultados(recorridos);
         } catch (Exception ex) {
-            pintarMensajeError("❌ Error al calcular el recorrido: " + ex.getMessage());
+            pintarError("❌ Error al calcular el recorrido: " + ex.getMessage());
         }
-    }
-
-    private void recalcularHorariosDisponibles() {
-        horariosDisponibles.clear();
-        horaSeleccionada = null;
-        actualizarHoraSeleccionada(null);
-        actualizarEstadoBotones();
-
-        Parada origen = comboOrigen.getValue();
-        String dia = comboDia.getValue();
-        if (origen == null || dia == null) return;
-
-        Integer numeroDia = diasMap.get(dia);
-        if (numeroDia == null) return;
-
-        List<Linea> lineas = coordinador.getLineas();
-        Map<String, Tramo> tramos = coordinador.getTramos();
-        if (lineas == null || tramos == null) {
-            pintarMensajeAdvertencia("ℹ️ No hay datos suficientes para calcular horarios en la parada.");
-            return;
-        }
-
-        for (Linea linea : lineas) {
-            List<Parada> paradas = linea.getParadas();
-            int idxOrigen = paradas.indexOf(origen);
-            if (idxOrigen < 0) continue;
-
-            int tiempoHastaOrigen = calcularTiempoEntreParadas(paradas, 0, idxOrigen, tramos);
-
-            linea.getFrecuencias().stream()
-                .filter(f -> f.getDiaSemana() == numeroDia)
-                .map(f -> f.getHora().plusSeconds(tiempoHastaOrigen))
-                .forEach(horariosDisponibles::add);
-        }
-
-        // Ordenar y quitar duplicados manteniendo orden
-        Collections.sort(horariosDisponibles);
-        Set<LocalTime> set = new LinkedHashSet<>(horariosDisponibles);
-        horariosDisponibles.clear();
-        horariosDisponibles.addAll(set);
-
-        if (!horariosDisponibles.isEmpty()) {
-            LocalTime ahora = LocalTime.now();
-            horaSeleccionada = horariosDisponibles.stream()
-                    .filter(h -> !h.isBefore(ahora))
-                    .findFirst()
-                    .orElse(horariosDisponibles.get(0));
-            actualizarHoraSeleccionada(horaSeleccionada);
-        }
-        actualizarEstadoBotones();
-    }
-
-    private int calcularTiempoEntreParadas(List<Parada> paradas, int idxInicio, int idxFin, Map<String, Tramo> tramos) {
-        int tiempo = 0;
-        for (int i = idxInicio; i < idxFin; i++) {
-            if (i + 1 >= paradas.size()) break;
-            String clave = paradas.get(i).getCodigo() + "-" + paradas.get(i + 1).getCodigo();
-            Tramo tramo = tramos.get(clave);
-            if (tramo != null) {
-                tiempo += tramo.getTiempo();
-            }
-        }
-        return tiempo;
-    }
-
-    private void actualizarHoraSeleccionada(LocalTime hora) {
-        lblHoraSeleccionada.setText(hora == null ? "--:--" : String.format("%02d:%02d", hora.getHour(), hora.getMinute()));
-    }
-
-    private void actualizarEstadoBotones() {
-        boolean habilitar = comboOrigen.getValue() != null && comboDia.getValue() != null && !horariosDisponibles.isEmpty();
-        btnAnterior.setDisable(!habilitar);
-        btnSiguiente.setDisable(!habilitar);
     }
 
     private void mostrarResultados(List<List<Recorrido>> listaRecorridos) {
@@ -195,37 +97,65 @@ public class ControladorInterfaz {
         sb.append("          RECORRIDOS DISPONIBLES\n");
         sb.append("═══════════════════════════════════════════\n\n");
 
-        int contador = 1;
-        for (List<Recorrido> opcion : listaRecorridos) {
-            sb.append("🚏 Opción ").append(contador++).append(":\n");
+        int i = 1;
+        for (var opcion : listaRecorridos) {
+            sb.append("🚏 Opción ").append(i++).append(":\n");
             sb.append("───────────────────────────────────────────\n");
-            for (Recorrido r : opcion) {
+            for (var r : opcion) {
                 if (r.getLinea() != null) {
                     sb.append("  🚍 Línea: ").append(r.getLinea().getNombre())
                       .append(" (").append(r.getLinea().getCodigo()).append(")\n");
                 } else {
                     sb.append("  🚶 Tramo Caminando\n");
                 }
-                List<Parada> ps = r.getParadas();
+                var ps = r.getParadas();
                 if (!ps.isEmpty()) {
                     sb.append("     Desde: ").append(ps.get(0).getDireccion()).append("\n");
                     sb.append("     Hasta: ").append(ps.get(ps.size() - 1).getDireccion()).append("\n");
                 }
                 sb.append("     Sale:  ").append(r.getHoraSalida()).append("\n");
-                int dur = r.getDuracion();
-                sb.append("     Duración: ").append(dur / 60).append(" min ").append(dur % 60).append(" seg\n\n");
+
+                // Duración sin mostrar segundos cuando son 0
+                int totalSeg = r.getDuracion();
+                int min = totalSeg / 60;
+                int seg = totalSeg % 60;
+
+                sb.append("     Duración: ").append(min).append(" min");
+                if (seg != 0) {
+                    sb.append(" ").append(seg).append(" seg");
+                }
+                sb.append("\n\n");
             }
         }
         resultadoArea.setText(sb.toString());
         resultadoArea.setStyle("-fx-control-inner-background: #f8f9fa; -fx-text-fill: black;");
     }
 
-    private void pintarMensajeAdvertencia(String msg) {
+    // Utilitarios
+    private List<Integer> rango(int desde, int hasta) {
+        List<Integer> l = new ArrayList<>();
+        for (int i = desde; i <= hasta; i++) l.add(i);
+        return l;
+    }
+
+    private StringConverter<Integer> dosDigitos() {
+        return new StringConverter<Integer>() {
+            @Override public String toString(Integer value) {
+                if (value == null) return "";
+                return String.format("%02d", value);
+            }
+            @Override public Integer fromString(String s) {
+                return (s == null || s.isEmpty()) ? null : Integer.valueOf(s);
+            }
+        };
+    }
+
+    private void pintarAdvertencia(String msg) {
         resultadoArea.setText(msg);
         resultadoArea.setStyle("-fx-control-inner-background: #fff3cd; -fx-text-fill: #856404;");
     }
 
-    private void pintarMensajeError(String msg) {
+    private void pintarError(String msg) {
         resultadoArea.setText(msg);
         resultadoArea.setStyle("-fx-control-inner-background: #f8d7da; -fx-text-fill: #721c24;");
     }

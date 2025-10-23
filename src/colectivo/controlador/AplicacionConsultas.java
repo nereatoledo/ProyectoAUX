@@ -53,7 +53,7 @@ public class AplicacionConsultas extends Application {
 			miCoordinador.setCalculo(calculoLogic);
 			miCoordinador.setTramos(tramos);
 			miCoordinador.setParadas(new ArrayList<>(paradas.values()));
-			miCoordinador.setLineas(new ArrayList<>(lineas.values())); // Importante para horarios en origen
+			miCoordinador.setLineas(new ArrayList<>(lineas.values()));
 
 		} catch (IOException e) {
 			System.err.println("Error fatal al cargar los datos iniciales. La aplicación se cerrará.");
@@ -74,8 +74,12 @@ public class AplicacionConsultas extends Application {
 			ControladorInterfaz controller = loader.getController();
 			controller.init(miCoordinador, new ArrayList<>(paradas.values()));
 
+			Scene scene = new Scene(root, 700, 700);
+			// Cargar CSS (por si el FXML no lo toma)
+			scene.getStylesheets().add(getClass().getResource("/colectivo/interfaz/estilos.css").toExternalForm());
+
 			primaryStage.setTitle("Sistema de Consultas de Colectivos");
-			primaryStage.setScene(new Scene(root, 700, 700));
+			primaryStage.setScene(scene);
 			primaryStage.show();
 		} catch (IOException e) {
 			e.printStackTrace();
