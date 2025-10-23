@@ -1,2 +1,46 @@
-<!-- Reemplaza el TextField de hora -->
-<!-- prueba de cambio -->
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8.0.171"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="colectivo.interfaz.ControladorInterfaz"
+      spacing="15" fillWidth="true"
+      stylesheets=""
+      >
+    <padding>
+        <Insets topRightBottomLeft="20"/>
+    </padding>
+
+    <Label text="Consulta de Recorridos" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+
+    <VBox spacing="8" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 16;">
+        <Label text="Parada de Origen:" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="comboOrigen" maxWidth="1.0"/>
+
+        <Label text="Parada de Destino:" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="comboDestino" maxWidth="1.0"/>
+
+        <Label text="Día de la Semana:" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="comboDia" maxWidth="1.0"/>
+
+        <Label text="Hora seleccionada:" style="-fx-font-weight: bold;"/>
+        <Label fx:id="lblHoraSeleccionada" text="--:--" style="-fx-font-size: 14; -fx-text-fill: #2c3e50;"/>
+
+        <HBox spacing="10">
+            <Button fx:id="btnAnterior" text="⏮ Anterior" onAction="#onAnterior"/>
+            <Button fx:id="btnSiguiente" text="⏭ Siguiente" onAction="#onSiguiente"/>
+        </HBox>
+
+        <Button fx:id="btnCalcular" text="🔍 Calcular Recorrido" onAction="#onCalcular" maxWidth="1.0"
+                style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold; -fx-padding: 10; -fx-background-radius: 8;"/>
+    </VBox>
+
+    <VBox spacing="8" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 16;">
+        <Label text="Resultados:" style="-fx-font-weight: bold;"/>
+        <TextArea fx:id="resultadoArea" editable="false" prefRowCount="12"
+                  style="-fx-control-inner-background: #f8f9fa; -fx-font-family: 'Consolas'; -fx-font-size: 12; -fx-border-color: #dcdde1; -fx-border-width: 1; -fx-border-radius: 5;"/>
+    </VBox>
+</VBox>
